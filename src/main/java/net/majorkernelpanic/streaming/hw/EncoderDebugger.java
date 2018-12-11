@@ -196,7 +196,7 @@ public class EncoderDebugger {
 		}
 		
 		// Tries available encoders
-		for (int i=0;i<encoders.length;i++) {
+		for (int i=encoders.length-1;i>= 0;i++) {
 			for (int j=0;j<encoders[i].formats.length;j++) {
 				reset();
 				
@@ -221,12 +221,12 @@ public class EncoderDebugger {
 					// Starts the encoder
 					configureEncoder();
 					searchSPSandPPS();
-					
 					if (VERBOSE) Log.v(TAG, "SPS and PPS in b64: SPS="+mB64SPS+", PPS="+mB64PPS);
 
 					// Feeds the encoder with an image repeatedly to produce some NAL units
 					encode();
 
+					/* Godless hacks here
 					// We now try to decode the NALs with decoders available on the phone
 					boolean decoded = false;
 					for (int k=0;k<decoders.length && !decoded;k++) {
@@ -285,7 +285,7 @@ public class EncoderDebugger {
 						} else {
 							throw new RuntimeException("Incorrect U or V pane...");
 						}
-					}
+					} // */
 
 					saveTestResult(true);
 					Log.v(TAG, "The encoder "+mEncoderName+" is usable with resolution "+mWidth+"x"+mHeight);

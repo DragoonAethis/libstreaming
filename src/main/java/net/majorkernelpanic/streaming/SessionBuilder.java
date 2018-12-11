@@ -71,6 +71,8 @@ public class SessionBuilder {
 	private SurfaceView mSurfaceView = null;
 	private String mOrigin = null;
 	private String mDestination = null;
+	private int mVideoDestinationPort = 5006;
+	private int mAudioDestinationPort = 5004;
 	private Session.Callback mCallback = null;
 
 	// Removes the default public constructor
@@ -138,13 +140,13 @@ public class SessionBuilder {
 			video.setVideoQuality(mVideoQuality);
 			video.setSurfaceView(mSurfaceView);
 			video.setPreviewOrientation(mOrientation);
-			video.setDestinationPorts(5006);
+			video.setDestinationPorts(mVideoDestinationPort);
 		}
 
 		if (session.getAudioTrack()!=null) {
 			AudioStream audio = session.getAudioTrack();
 			audio.setAudioQuality(mAudioQuality);
-			audio.setDestinationPorts(5004);
+			audio.setDestinationPorts(mAudioDestinationPort);
 		}
 
 		return session;
@@ -164,6 +166,18 @@ public class SessionBuilder {
 	public SessionBuilder setDestination(String destination) {
 		mDestination = destination;
 		return this; 
+	}
+
+	/** Set the port used to transfer the video track over RTP. **/
+	public SessionBuilder setVideoDestinationPort(int port) {
+		mVideoDestinationPort = port;
+		return this;
+	}
+
+	/** Set the port used to transfer the audio track over RTP. **/
+	public SessionBuilder setAudioDestinationPort(int port) {
+		mAudioDestinationPort = port;
+		return this;
 	}
 
 	/** Sets the origin of the session. It appears in the SDP of the session. */

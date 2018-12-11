@@ -110,7 +110,7 @@ public class VideoQuality {
 		for (Iterator<Size> it = supportedSizes.iterator(); it.hasNext();) {
 			Size size = it.next();
 			supportedSizesStr += size.width+"x"+size.height+(it.hasNext()?", ":"");
-			int dist = Math.abs(quality.resX - size.width);
+			int dist = Math.abs(quality.resX - size.width) + Math.abs(quality.resY - size.height);
 			if (dist<minDist) {
 				minDist = dist;
 				v.resX = size.width;

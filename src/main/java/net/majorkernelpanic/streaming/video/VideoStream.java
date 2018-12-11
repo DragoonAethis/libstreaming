@@ -590,14 +590,14 @@ public abstract class VideoStream extends MediaStream {
 			});
 
 			try {
-
-				// If the phone has a flash, we turn it on/off according to mFlashEnabled
-				// setRecordingHint(true) is a very nice optimization if you plane to only use the Camera for recording
 				Parameters parameters = mCamera.getParameters();
-				if (parameters.getFlashMode()!=null) {
-					parameters.setFlashMode(mFlashEnabled?Parameters.FLASH_MODE_TORCH:Parameters.FLASH_MODE_OFF);
+				parameters.setFocusMode(Parameters.FOCUS_MODE_CONTINUOUS_VIDEO); // Enable autofocus
+				parameters.setRecordingHint(true); // Lets the camera preview start faster.
+
+				if (parameters.getFlashMode()!=null) { // Set flash as requested, if it's present.
+					parameters.setFlashMode(mFlashEnabled ? Parameters.FLASH_MODE_TORCH : Parameters.FLASH_MODE_OFF);
 				}
-				parameters.setRecordingHint(true);
+
 				mCamera.setParameters(parameters);
 				mCamera.setDisplayOrientation(mOrientation);
 
@@ -611,12 +611,10 @@ public abstract class VideoStream extends MediaStream {
 				} catch (IOException e) {
 					throw new InvalidSurfaceException("Invalid surface !");
 				}
-
 			} catch (RuntimeException e) {
 				destroyCamera();
 				throw e;
 			}
-
 		}
 	}
 
@@ -638,7 +636,6 @@ public abstract class VideoStream extends MediaStream {
 	}
 
 	protected synchronized void updateCamera() throws RuntimeException {
-		
 		// The camera is already correctly configured
 		if (mUpdated) return;
 		
@@ -648,6 +645,8 @@ public abstract class VideoStream extends MediaStream {
 		}
 
 		Parameters parameters = mCamera.getParameters();
+		parameters.setFocusMode(Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
+
 		mQuality = VideoQuality.determineClosestSupportedResolution(parameters, mQuality);
 		int[] max = VideoQuality.determineMaximumSupportedFramerate(parameters);
 		

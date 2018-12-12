@@ -1,15 +1,6 @@
-# built application files
-*.apk
-*.ap_
-*.dex
-*.class
-bin/
-gen/
-*.class
-*.o
-*.so
-*.sh
-local.properties
-custom_rules.xml
-ant.properties
-*~
+# Module build artifacts
+build/
+
+# Android Studio metadata
+libstreaming.iml
+

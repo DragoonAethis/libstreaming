@@ -1,6 +1,2 @@
 # Module build artifacts
 build/
-
-# Android Studio metadata
-libstreaming.iml
-

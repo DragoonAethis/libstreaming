@@ -2,18 +2,18 @@
 
 ## What it does
 
-**libstreaming** is an API that allows you, with only a few lines of code, to stream the camera and/or microphone of an android powered device using RTP over UDP. 
+**libstreaming** is an API that allows you, with only a few lines of code, to stream the camera and/or microphone of an Android device using RTP over UDP.
 
-* Android 4.0 or more recent is required.
-* Supported encoders include H.264, H.263, AAC and AMR.
+* Android 5.0 or newer is required.
+* H.264 is supported for video encoding, AAC for audio.
 
-The first step you will need to achieve to start a streaming session to some peer is called 'signaling'. During this step you will contact the receiver and send a description of the incomming streams. You have three ways to do that with libstreaming.
+The first step you will need to achieve to start a streaming session to some peer is called 'signaling'. During this step you will contact the receiver and send a description of the incoming streams. You have three ways to do that with libstreaming.
 
 * With the RTSP client: if you want to stream to a Wowza Media Server, it's the way to go. [The example 3](https://github.com/fyhertz/libstreaming-examples#example-3) illustrates that use case.
 * With the RTSP server: in that case the phone will act as a RTSP server and wait for a RTSP client to request a stream. This use case is illustated in [the example 1](https://github.com/fyhertz/libstreaming-examples#example-1).
 * Or you use libstreaming without using the RTSP protocol at all, and signal the session using SDP over a protocol you like. [The example 2](https://github.com/fyhertz/libstreaming-examples#example-2) illustrates that use case.
 
-The full javadoc documentation of the API is available here: http://guigui.us/libstreaming/doc
+There used to be a Javadoc link here, but it's outdated like hell, so eh.
 
 ## How does it work? You should really read this, it's important!
 
@@ -23,30 +23,16 @@ There are three ways on Android to get encoded data from the peripherals:
 * With the **MediaCodec** API and the buffer-to-buffer method which requires Android 4.1.
 * With the **MediaCodec** API and the surface-to-buffer method which requires Android 4.3.
 
-### Encoding with the MediaRecorder API
-
-The **MediaRecorder** API was not intended for streaming applications but can be used to retrieve encoded data from the peripherals of the phone.  The trick is to configure a MediaRecorder instance to write to a **LocalSocket** instead of a regular file (see **MediaStream.java**).
-
-Edit: as of Android Lollipop using a **LocalSocket** is not possible anymore for security reasons. But using a [**ParcelFileDescriptor**](http://developer.android.com/reference/android/os/ParcelFileDescriptor.html) does the trick. More details in the file **MediaStream.java**! ([Thanks to those guys for the insight](http://stackoverflow.com/questions/26990816/mediarecorder-issue-on-android-lollipop))
-
-This hack has some limitations:
-* Lip sync can be approximative.
-* The MediaRecorder internal buffers can lead to some important jitter. libstreaming tries to compensate that jitter.
-
-It's hard to tell how well this hack is going to work on a phone. It does work well on many devices though.
-
 ### Encoding with the MediaCodec API
 
-The **MediaCodec** API do not present the limitations I just mentionned, but has its own issues. There are actually two ways to use the MediaCodec API: with buffers or with a surface.
+There are actually two ways to use the MediaCodec API: with buffers or with a surface.
 
 The buffer-to-buffer method uses calls to [**dequeueInputBuffer**](http://developer.android.com/reference/android/media/MediaCodec.html#dequeueInputBuffer(long)) and [**queueInputBuffer**](http://developer.android.com/reference/android/media/MediaCodec.html#queueInputBuffer(int, int, int, long, int)) to feed the encoder with raw data.
-That seems easy right ? Well it's not, because video encoders that you get access to with this API are using different color formats and you need to support all of them. A list of those color formats is available [here](http://developer.android.com/reference/android/media/MediaCodecInfo.CodecCapabilities.html). Moreover, many encoders claim support for color formats they don't actually support properly or can present little glitches.
+That seems easy, right? Well, it's not, because video encoders that you get access to with this API are using different color formats and you need to support all of them. A list of those color formats is available [here](http://developer.android.com/reference/android/media/MediaCodecInfo.CodecCapabilities.html). Moreover, many encoders claim support for color formats they don't actually support properly or can present little glitches.
 
 All the [**hw**](http://guigui.us/libstreaming/doc/net/majorkernelpanic/streaming/hw/package-summary.html) package is dedicated to solving those issues. See in particular [**EncoderDebugger**](http://guigui.us/libstreaming/doc/net/majorkernelpanic/streaming/hw/EncoderDebugger.html) class. 
 
-If streaming with that API fails, libstreaming fallbacks on streaming with the **MediaRecorder API**.
-
-The surface-to-buffer method uses the [createInputSurface()](http://developer.android.com/reference/android/media/MediaCodec.html#createInputSurface()) method. This method is probably the best way to encode raw video from the camera but it requires android 4.3 and up.
+The surface-to-buffer method uses the [createInputSurface()](http://developer.android.com/reference/android/media/MediaCodec.html#createInputSurface()) method. This method is probably the best way to encode raw video from the camera but it requires Android 4.3 or newer. (A cleanup is in progress to make this the only streaming method. -DA)
 
 The [**gl**](http://guigui.us/libstreaming/doc/net/majorkernelpanic/streaming/gl/package-summary.html) package is dedicated to using the MediaCodec API with a surface.
 
@@ -54,11 +40,9 @@ It is not yet enabled by default in libstreaming but you can force it with the [
 
 ### Packetization process
 
-Once raw data from the peripherals has been encoded, it is encapsulated in a proper RTP stream. The packetization algorithm that must be used depends on the format of the data (H.264, H.263, AMR and AAC) and are all specified in their respective RFC:
+Once raw data from the peripherals has been encoded, it is encapsulated in a proper RTP stream. The packetization algorithm that must be used depends on the format of the data (H.264 and AAC) and are specified in their respective RFC:
 
 * RFC 3984 for H.264: **H264Packetizer.java**
-* RFC 4629 for H.263: **H263Packetizer.java**
-* RFC 3267 for AMR: **AMRNBPacketizer.java**
 * RFC 3640 for AAC: **AACADTSPacketizer.java** or **AACLATMPacketizer.java**
 
 If you are looking for a basic implementation of one of the RFC mentionned above, check the sources of corresponding class.
@@ -67,7 +51,7 @@ RTCP packets are also sent to the receiver since version 2.0 of libstreaming. On
 
 The [**rtp**](http://guigui.us/libstreaming/doc/net/majorkernelpanic/streaming/rtp/package-summary.html) package handles packetization of encoded data in RTP packets.
 
-# Using libstreaming in your app
+# *NOT UPDATED* Using libstreaming in your app
 
 ## Required permissions
 

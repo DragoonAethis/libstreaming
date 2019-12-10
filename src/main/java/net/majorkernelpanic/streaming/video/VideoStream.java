@@ -18,7 +18,6 @@
 
 package net.majorkernelpanic.streaming.video;
 
-import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -42,9 +41,7 @@ import android.hardware.Camera.Parameters;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
-import android.media.MediaRecorder;
 import android.os.Looper;
-import android.os.ParcelFileDescriptor;
 import android.util.Log;
 import android.view.Surface;
 import android.view.SurfaceHolder;
@@ -179,11 +176,6 @@ public abstract class VideoStream extends MediaStream {
 	public synchronized void setFlashState(boolean state) {
 		// If the camera has already been opened, we apply the change immediately
 		if (mCamera != null) {
-
-			if (mStreaming && mMode == MODE_MEDIARECORDER_API) {
-				lockCamera();
-			}
-
 			Parameters parameters = mCamera.getParameters();
 
 			// We test if the phone has a flash
@@ -198,10 +190,6 @@ public abstract class VideoStream extends MediaStream {
 				} catch (RuntimeException e) {
 					mFlashEnabled = false;
 					throw new RuntimeException("Can't turn the flash on !");
-				} finally {
-					if (mStreaming && mMode == MODE_MEDIARECORDER_API) {
-						unlockCamera();
-					}
 				}
 			}
 		} else {
@@ -320,86 +308,6 @@ public abstract class VideoStream extends MediaStream {
 		mCameraOpenedManually = false;
 		stop();
 	}
-
-	/**
-	 * Video encoding is done by a MediaRecorder.
-	 */
-	protected void encodeWithMediaRecorder() throws IOException, ConfNotSupportedException {
-
-		Log.d(TAG,"Video encoded using the MediaRecorder API");
-
-		// We need a local socket to forward data output by the camera to the packetizer
-		createSockets();
-
-		// Reopens the camera if needed
-		destroyCamera();
-		createCamera();
-
-		// The camera must be unlocked before the MediaRecorder can use it
-		unlockCamera();
-
-		try {
-			mMediaRecorder = new MediaRecorder();
-			mMediaRecorder.setCamera(mCamera);
-			mMediaRecorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
-			mMediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-			mMediaRecorder.setVideoEncoder(mVideoEncoder);
-			mMediaRecorder.setPreviewDisplay(mSurfaceView.getHolder().getSurface());
-			mMediaRecorder.setVideoSize(mRequestedQuality.resX,mRequestedQuality.resY);
-			mMediaRecorder.setVideoFrameRate(mRequestedQuality.framerate);
-
-			// The bandwidth actually consumed is often above what was requested 
-			mMediaRecorder.setVideoEncodingBitRate((int)(mRequestedQuality.bitrate*0.8));
-
-			// We write the output of the camera in a local socket instead of a file !			
-			// This one little trick makes streaming feasible quiet simply: data from the camera
-			// can then be manipulated at the other end of the socket
-			FileDescriptor fd = null;
-			if (sPipeApi == PIPE_API_PFD) {
-				fd = mParcelWrite.getFileDescriptor();
-			} else  {
-				fd = mSender.getFileDescriptor();
-			}
-			mMediaRecorder.setOutputFile(fd);
-
-			mMediaRecorder.prepare();
-			mMediaRecorder.start();
-
-		} catch (Exception e) {
-			throw new ConfNotSupportedException(e.getMessage());
-		}
-
-		InputStream is = null;
-
-		if (sPipeApi == PIPE_API_PFD) {
-			is = new ParcelFileDescriptor.AutoCloseInputStream(mParcelRead);
-		} else  {
-			is = mReceiver.getInputStream();
-		}
-
-		// This will skip the MPEG4 header if this step fails we can't stream anything :(
-		try {
-			byte buffer[] = new byte[4];
-			// Skip all atoms preceding mdat atom
-			while (!Thread.interrupted()) {
-				while (is.read() != 'm');
-				is.read(buffer,0,3);
-				if (buffer[0] == 'd' && buffer[1] == 'a' && buffer[2] == 't') break;
-			}
-		} catch (IOException e) {
-			Log.e(TAG,"Couldn't skip mp4 header :/");
-			stop();
-			throw e;
-		}
-
-		// The packetizer encapsulates the bit stream in an RTP stream and send it over the network
-		mPacketizer.setInputStream(is);
-		mPacketizer.start();
-
-		mStreaming = true;
-
-	}
-
 
 	/**
 	 * Video encoding is done by a MediaCodec.

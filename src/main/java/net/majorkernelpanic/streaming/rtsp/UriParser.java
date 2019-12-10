@@ -19,9 +19,7 @@
 package net.majorkernelpanic.streaming.rtsp;
 
 import static net.majorkernelpanic.streaming.SessionBuilder.AUDIO_AAC;
-import static net.majorkernelpanic.streaming.SessionBuilder.AUDIO_AMRNB;
 import static net.majorkernelpanic.streaming.SessionBuilder.AUDIO_NONE;
-import static net.majorkernelpanic.streaming.SessionBuilder.VIDEO_H263;
 import static net.majorkernelpanic.streaming.SessionBuilder.VIDEO_H264;
 import static net.majorkernelpanic.streaming.SessionBuilder.VIDEO_NONE;
 
@@ -132,28 +130,6 @@ public class UriParser {
 					}
 				}
 
-				// VIDEOAPI -> can be used to specify what api will be used to encode video (the MediaRecorder API or the MediaCodec API)
-				else if (paramName.equalsIgnoreCase("videoapi")) {
-					if (paramValue!=null) {
-						if (paramValue.equalsIgnoreCase("mr")) {
-							videoApi = MediaStream.MODE_MEDIARECORDER_API;
-						} else if (paramValue.equalsIgnoreCase("mc")) {
-							videoApi = MediaStream.MODE_MEDIACODEC_API;
-						}
-					}
-				}
-
-				// AUDIOAPI -> can be used to specify what api will be used to encode audio (the MediaRecorder API or the MediaCodec API)
-				else if (paramName.equalsIgnoreCase("audioapi")) {
-					if (paramValue!=null) {
-						if (paramValue.equalsIgnoreCase("mr")) {
-							audioApi = MediaStream.MODE_MEDIARECORDER_API;
-						} else if (paramValue.equalsIgnoreCase("mc")) {
-							audioApi = MediaStream.MODE_MEDIACODEC_API;
-						}
-					}
-				}
-
 				// TTL -> the client can modify the time to live of packets
 				// By default ttl=64
 				else if (paramName.equalsIgnoreCase("ttl")) {
@@ -167,6 +143,9 @@ public class UriParser {
 						}
 					}
 				}
+
+				/* All of the following is currently commented out as we only have H.264 and AAC
+				support for now. This could be used in the future for VP8 and Opus selection.
 
 				// H.264
 				else if (paramName.equalsIgnoreCase("h264")) {
@@ -190,10 +169,8 @@ public class UriParser {
 				else if (paramName.equalsIgnoreCase("aac")) {
 					AudioQuality quality = AudioQuality.parseQuality(paramValue);
 					builder.setAudioQuality(quality).setAudioEncoder(AUDIO_AAC);
-				}
-
+				} // */
 			}
-
 		}
 
 		if (builder.getVideoEncoder()==VIDEO_NONE && builder.getAudioEncoder()==AUDIO_NONE) {
